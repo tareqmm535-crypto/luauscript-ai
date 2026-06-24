@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LuauScript AI - Neural Agent Matrix</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-deep:#060a10;--bg-primary:#0b1119;--bg-secondary:#111827;--bg-elevated:#1a2332;
+  --glass:rgba(255,255,255,0.03);--glass-border:rgba(255,255,255,0.06);--glass-hover:rgba(255,255,255,0.07);
+  --text-primary:#edf2f7;--text-secondary:#8899aa;--text-dim:#4a5568;
+  --neon-green:#10b981;--neon-cyan:#06b6d4;--neon-purple:#8b5cf6;--neon-pink:#ec4899;--neon-orange:#f59e0b;
+  --green-glow:0 0 20px rgba(16,185,129,0.25);--cyan-glow:0 0 20px rgba(6,182,212,0.25);--purple-glow:0 0 20px rgba(139,92,246,0.25);
+  --radius:10px;--radius-lg:16px;--radius-xl:20px;
+  --font-sans:'Inter','Cairo',sans-serif;--font-mono:'JetBrains Mono','Consolas',monospace;
+  --shadow-card:0 8px 32px rgba(0,0,0,0.4);--transition:all 0.3s cubic-bezier(0.4,0,0.2,1)
+}
+::selection{background:rgba(139,92,246,0.3)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--text-dim);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-secondary)}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font-sans);background:var(--bg-deep);color:var(--text-primary);font-size:14px;background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(139,92,246,0.08),transparent),radial-gradient(ellipse 60% 40% at 100% 80%,rgba(6,182,212,0.06),transparent),radial-gradient(ellipse 50% 30% at 0% 60%,rgba(16,185,129,0.04),transparent)}
+a{text-decoration:none;color:inherit}
+.app{display:flex;height:100vh;width:100vw;position:relative;overflow:hidden}
+
+/* ===== GLASS ORB BACKGROUND ===== */
+.orb{position:fixed;border-radius:50%;pointer-events:none;filter:blur(80px);animation:orbFloat 20s ease-in-out infinite;z-index:0}
+.orb-1{width:500px;height:500px;background:radial-gradient(circle,rgba(139,92,246,0.12),transparent 70%);top:-150px;right:-100px;animation-delay:0s}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(6,182,212,0.08),transparent 70%);bottom:-100px;left:-100px;animation-delay:-7s}
+.orb-3{width:300px;height:300px;background:radial-gradient(circle,rgba(16,185,129,0.06),transparent 70%);bottom:40%;right:20%;animation-delay:-14s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.1)}66%{transform:translate(-20px,20px) scale(0.9)}}
+
+/* ===== SIDEBAR ===== */
+.sidebar{width:260px;min-width:260px;background:rgba(17,24,39,0.7);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-right:1px solid var(--glass-border);display:flex;flex-direction:column;position:relative;z-index:10}
+.sidebar::after{content:'';position:absolute;top:0;right:-1px;width:1px;height:100%;background:linear-gradient(180deg,transparent,var(--neon-purple),transparent);opacity:0.3}
+.sidebar-header{padding:20px 20px 16px;border-bottom:1px solid var(--glass-border);display:flex;align-items:center;gap:12px;justify-content:space-between}
+.logo-wrap{display:flex;align-items:center;gap:12px}
+.logo-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--neon-purple),var(--neon-cyan));display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;box-shadow:var(--purple-glow);position:relative;overflow:hidden}
+.logo-icon::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,0.2),transparent 60%);animation:logoShine 3s ease-in-out infinite}
+@keyframes logoShine{0%,100%{transform:translateX(-100%)}50%{transform:translateX(100%)}}
+.logo-text{font-size:18px;font-weight:800;background:linear-gradient(135deg,#fff 30%,var(--neon-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.5px}
+.logo-badge{font-size:9px;background:linear-gradient(135deg,var(--neon-purple),var(--neon-cyan));color:#fff;padding:2px 10px;border-radius:20px;font-weight:700;letter-spacing:0.5px;-webkit-text-fill-color:#fff;margin-left:4px;box-shadow:var(--purple-glow)}
+.close-sidebar{display:none;background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;transition:var(--transition)}
+.close-sidebar:hover{color:var(--text-primary);transform:rotate(90deg)}
+
+.agent-status{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--glass-border)}
+.status-ring{position:relative;width:32px;height:32px;min-width:32px}
+.status-ring svg{transform:rotate(-90deg)}
+.status-ring .bg{fill:none;stroke:rgba(255,255,255,0.06);stroke-width:3}
+.status-ring .fg{fill:none;stroke:var(--neon-green);stroke-width:3;stroke-dasharray:88;stroke-dashoffset:18;stroke-linecap:round;animation:statusPulse 3s ease-in-out infinite}
+@keyframes statusPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.status-ring .dot{position:absolute;top:50%;left:50%;width:6px;height:6px;border-radius:50%;background:var(--neon-green);transform:translate(-50%,-50%);box-shadow:var(--green-glow);animation:dotPulse 2s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{box-shadow:0 0 8px var(--neon-green)}50%{box-shadow:0 0 20px var(--neon-green),0 0 40px var(--neon-green)}}
+.status-info{display:flex;flex-direction:column;gap:1px}
+.status-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.status-value{font-size:13px;font-weight:700;color:var(--text-primary)}
+.status-value strong{color:var(--neon-green)}
+
+/* Agent Bar */
+.agent-bar-wrap{padding:8px 20px 4px;border-bottom:1px solid var(--glass-border)}
+.agent-bar{display:flex;align-items:center;gap:4px;height:28px}
+.agent-bar-item{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden;position:relative;transition:var(--transition)}
+.agent-bar-item .fill{height:100%;border-radius:2px;transition:width 0.5s ease;width:0%}
+.agent-bar-item.active .fill{animation:barFill 1.5s ease forwards}
+.agent-bar-item:nth-child(1) .fill{background:var(--neon-purple)}.agent-bar-item:nth-child(2) .fill{background:var(--neon-cyan)}
+.agent-bar-item:nth-child(3) .fill{background:var(--neon-green)}.agent-bar-item:nth-child(4) .fill{background:var(--neon-orange)}
+.agent-bar-item:nth-child(5) .fill{background:var(--neon-pink)}
+.agent-bar-item:nth-child(1).active .fill{animation-delay:0s}.agent-bar-item:nth-child(2).active .fill{animation-delay:0.1s}
+.agent-bar-item:nth-child(3).active .fill{animation-delay:0.2s}.agent-bar-item:nth-child(4).active .fill{animation-delay:0.3s}
+.agent-bar-item:nth-child(5).active .fill{animation-delay:0.4s}
+@keyframes barFill{0%{width:0%}70%{width:100%}100%{width:60%}}
+
+/* Navigation */
+.nav-wrap{flex:1;overflow-y:auto;padding:10px 10px 6px}
+.nav-label{padding:10px 12px 6px;font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius);color:var(--text-secondary);cursor:pointer;font-size:13px;font-weight:500;transition:var(--transition);position:relative;overflow:hidden}
+.nav-item::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(139,92,246,0.1),transparent);opacity:0;transition:var(--transition)}
+.nav-item:hover{color:var(--text-primary);background:var(--glass-hover)}
+.nav-item:hover::before{opacity:1}
+.nav-item.active{color:#fff;background:linear-gradient(90deg,rgba(139,92,246,0.15),transparent);border:1px solid rgba(139,92,246,0.2);box-shadow:inset 0 0 20px rgba(139,92,246,0.05)}
+.nav-item.active .nav-icon{color:var(--neon-purple);text-shadow:0 0 10px rgba(139,92,246,0.5)}
+.nav-item .nav-icon{width:20px;text-align:center;font-size:14px;transition:var(--transition)}
+.nav-item .nav-badge{margin-left:auto;font-size:9px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.15);color:var(--neon-green);font-weight:600}
+.nav-item .nav-badge.warn{background:rgba(245,158,11,0.15);color:var(--neon-orange)}
+
+.sidebar-footer{padding:12px 20px;border-top:1px solid var(--glass-border);display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-dim)}
+.sidebar-footer .ft-left{display:flex;align-items:center;gap:8px}
+.sidebar-footer .ft-dot{width:6px;height:6px;border-radius:50%;background:var(--neon-green);box-shadow:var(--green-glow);animation:dotPulse 2s ease-in-out infinite}
+
+/* ===== MAIN ===== */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;z-index:5}
+
+/* Topbar */
+.topbar{height:56px;min-height:56px;background:rgba(17,24,39,0.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--glass-border);display:flex;align-items:center;gap:14px;padding:0 24px;position:relative}
+.topbar::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(139,92,246,0.3),transparent)}
+.menu-btn{display:none;background:none;border:none;color:var(--text-secondary);font-size:22px;cursor:pointer;padding:4px;transition:var(--transition)}
+.menu-btn:hover{color:var(--text-primary);transform:scale(1.1)}
+.file-info{display:flex;align-items:center;gap:14px}
+.file-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(6,182,212,0.1));display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--neon-purple);border:1px solid rgba(139,92,246,0.2)}
+.file-details{display:flex;flex-direction:column;gap:1px}
+.file-name{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--text-primary);letter-spacing:-0.3px}
+.file-status{font-size:10px;color:var(--text-dim);display:flex;align-items:center;gap:5px}
+.file-status .st-dot{width:5px;height:5px;border-radius:50%;background:var(--neon-green);display:inline-block}
+.actions{display:flex;align-items:center;gap:4px;margin-left:auto}
+.tbtn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--glass);border:1px solid transparent;color:var(--text-secondary);cursor:pointer;font-size:14px;transition:var(--transition);position:relative}
+.tbtn:hover{background:var(--glass-hover);color:var(--text-primary);border-color:var(--glass-border);transform:translateY(-1px)}
+.tbtn:active{transform:scale(0.95)}
+.divider{width:1px;height:24px;background:var(--glass-border);margin:0 6px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:var(--radius);font-size:12px;font-weight:600;border:none;cursor:pointer;transition:var(--transition);font-family:var(--font-sans);position:relative;overflow:hidden}
+.btn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent 50%);opacity:0;transition:var(--transition)}
+.btn:hover::after{opacity:1}
+.btn-primary{background:linear-gradient(135deg,var(--neon-purple),var(--neon-cyan));color:#fff;box-shadow:var(--purple-glow)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(139,92,246,0.4)}
+.btn-ghost{background:var(--glass);border:1px solid var(--glass-border);color:var(--text-secondary)}
+.btn-ghost:hover{background:var(--glass-hover);color:var(--text-primary);border-color:rgba(255,255,255,0.1)}
+.btn-danger{background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+.btn-sm{padding:6px 14px;font-size:11px}
+
+/* Pages */
+.pages{flex:1;overflow:hidden}
+.page{display:none;height:100%}
+.page.active{display:flex;flex-direction:column}
+
+/* ===== DASHBOARD ===== */
+.dash-scroll{flex:1;overflow-y:auto;padding:24px 28px}
+.dash-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
+.dash-title h1{font-size:26px;font-weight:900;background:linear-gradient(135deg,#fff 20%,var(--neon-cyan),var(--neon-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px}
+.dash-title p{color:var(--text-secondary);font-size:13px;margin-top:4px;display:flex;align-items:center;gap:6px}
+.dash-title .live-dot{width:7px;height:7px;border-radius:50%;background:var(--neon-green);display:inline-block;animation:dotPulse 2s ease-in-out infinite}
+.dash-actions{display:flex;gap:8px}
+
+/* Stats Grid */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:22px 24px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:var(--transition);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--neon-purple),transparent);opacity:0;transition:var(--transition)}
+.stat-card:hover{transform:translateY(-4px);border-color:rgba(139,92,246,0.2);box-shadow:var(--shadow-card)}
+.stat-card:hover::before{opacity:1}
+.stat-card.purple::before{background:linear-gradient(90deg,transparent,var(--neon-purple),transparent)}
+.stat-card.cyan::before{background:linear-gradient(90deg,transparent,var(--neon-cyan),transparent)}
+.stat-card.green::before{background:linear-gradient(90deg,transparent,var(--neon-green),transparent)}
+.stat-card.orange::before{background:linear-gradient(90deg,transparent,var(--neon-orange),transparent)}
+.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.stat-card.purple .stat-icon{background:rgba(139,92,246,0.12);color:var(--neon-purple)}
+.stat-card.cyan .stat-icon{background:rgba(6,182,212,0.12);color:var(--neon-cyan)}
+.stat-card.green .stat-icon{background:rgba(16,185,129,0.12);color:var(--neon-green)}
+.stat-card.orange .stat-icon{background:rgba(245,158,11,0.12);color:var(--neon-orange)}
+.stat-trend{font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;display:flex;align-items:center;gap:4px}
+.stat-trend.up{background:rgba(16,185,129,0.12);color:var(--neon-green)}
+.stat-trend.down{background:rgba(239,68,68,0.12);color:#ef4444}
+.stat-label{font-size:12px;color:var(--text-dim);font-weight:500;margin-bottom:4px}
+.stat-value{font-size:28px;font-weight:900;color:var(--text-primary);letter-spacing:-1px;line-height:1}
+.stat-sub{font-size:11px;color:var(--text-secondary);margin-top:6px}
+
+/* Mini Chart */
+.mini-chart{display:flex;align-items:flex-end;gap:3px;height:40px;margin-top:12px}
+.mini-chart .bar{flex:1;border-radius:2px 2px 0 0;min-height:4px;background:linear-gradient(to top,var(--neon-purple),transparent);opacity:0.6;transition:var(--transition)}
+.mini-chart .bar:hover{opacity:1}
+.stat-card.cyan .mini-chart .bar{background:linear-gradient(to top,var(--neon-cyan),transparent)}
+.stat-card.green .mini-chart .bar{background:linear-gradient(to top,var(--neon-green),transparent)}
+.mini-chart .bar:nth-child(1){height:24%}.mini-chart .bar:nth-child(2){height:45%}.mini-chart .bar:nth-child(3){height:18%}
+.mini-chart .bar:nth-child(4){height:68%}.mini-chart .bar:nth-child(5){height:35%}.mini-chart .bar:nth-child(6){height:52%}
+.mini-chart .bar:nth-child(7){height:28%}.mini-chart .bar:nth-child(8){height:72%}.mini-chart .bar:nth-child(9){height:40%}
+.mini-chart .bar:nth-child(10){height:58%}
+
+/* Panels Row */
+.panels-row{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:28px}
+
+/* Agent Activity Panel */
+.activity-panel{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:22px 24px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.activity-panel h3{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.activity-panel h3 .h3-badge{font-size:9px;background:rgba(139,92,246,0.15);color:var(--neon-purple);padding:2px 10px;border-radius:10px;font-weight:600}
+.activity-list{display:flex;flex-direction:column;gap:8px}
+.activity-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius);background:rgba(255,255,255,0.02);transition:var(--transition);cursor:pointer}
+.activity-item:hover{background:var(--glass-hover);transform:translateX(4px)}
+.activity-item .a-dot{width:8px;height:8px;min-width:8px;border-radius:50%}
+.activity-item .a-dot.purple{background:var(--neon-purple);box-shadow:0 0 10px var(--neon-purple)}
+.activity-item .a-dot.cyan{background:var(--neon-cyan);box-shadow:0 0 10px var(--neon-cyan)}
+.activity-item .a-dot.green{background:var(--neon-green);box-shadow:0 0 10px var(--neon-green)}
+.activity-item .a-dot.orange{background:var(--neon-orange);box-shadow:0 0 10px var(--neon-orange)}
+.activity-item .a-info{flex:1;min-width:0}
+.activity-item .a-name{font-size:12px;font-weight:600;color:var(--text-primary)}
+.activity-item .a-desc{font-size:11px;color:var(--text-dim);margin-top:1px}
+.activity-item .a-time{font-size:10px;color:var(--text-dim);white-space:nowrap}
+
+/* Quick Actions */
+.quick-panel{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:22px 24px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.quick-panel h3{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.quick-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px 12px;border-radius:var(--radius);background:rgba(255,255,255,0.02);border:1px solid var(--glass-border);cursor:pointer;transition:var(--transition);font-family:var(--font-sans);color:var(--text-secondary)}
+.quick-btn:hover{background:var(--glass-hover);border-color:rgba(139,92,246,0.2);color:var(--text-primary);transform:translateY(-2px)}
+.quick-btn .qb-icon{font-size:22px;color:var(--neon-purple)}
+.quick-btn:nth-child(2) .qb-icon{color:var(--neon-cyan)}
+.quick-btn:nth-child(3) .qb-icon{color:var(--neon-green)}
+.quick-btn:nth-child(4) .qb-icon{color:var(--neon-orange)}
+.quick-btn .qb-label{font-size:11px;font-weight:600}
+
+/* Agent Grid */
+.agent-grid-panel{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:22px 24px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);margin-bottom:28px}
+.agent-grid-panel h3{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.agent-grid-panel h3 .h3-badge{font-size:9px;background:rgba(6,182,212,0.15);color:var(--neon-cyan);padding:2px 10px;border-radius:10px;font-weight:600}
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.agent-chip{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius);background:rgba(255,255,255,0.02);border:1px solid var(--glass-border);cursor:default;transition:var(--transition)}
+.agent-chip:hover{background:var(--glass-hover);border-color:rgba(139,92,246,0.15)}
+.agent-chip .ac-dot{width:6px;height:6px;min-width:6px;border-radius:50%}
+.agent-chip .ac-dot.on{background:var(--neon-green);box-shadow:0 0 8px var(--neon-green)}
+.agent-chip .ac-dot.busy{background:var(--neon-orange);box-shadow:0 0 8px var(--neon-orange)}
+.agent-chip .ac-num{font-size:10px;font-weight:700;color:var(--text-dim)}
+.agent-chip .ac-name{font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ===== EDITOR ===== */
+.editor-wrap{display:flex;flex-direction:column;height:100%}
+.editor-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.editor-hbar{display:flex;justify-content:space-between;align-items:center;padding:8px 18px;background:rgba(6,10,16,0.4);border-bottom:1px solid var(--glass-border)}
+.hbar-left{display:flex;align-items:center;gap:14px}
+.lang-badge{padding:3px 12px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.5px;background:linear-gradient(135deg,var(--neon-purple),var(--neon-cyan));color:#fff;box-shadow:0 0 10px rgba(139,92,246,0.2)}
+.hbar-right{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-dim)}
+.editor-box{flex:1;display:flex;overflow:hidden;background:rgba(6,10,16,0.6);position:relative}
+.editor-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-purple),transparent);opacity:0.15}
+.line-num{padding:16px 16px 16px 20px;text-align:right;font-family:var(--font-mono);font-size:13px;line-height:1.7;color:rgba(74,85,104,0.5);background:rgba(6,10,16,0.3);min-width:56px;user-select:none;overflow:hidden;white-space:pre;border-right:1px solid var(--glass-border)}
+.code-area{flex:1;padding:16px 20px;background:transparent;border:none;color:var(--text-primary);font-family:var(--font-mono);font-size:13px;line-height:1.7;resize:none;outline:none;tab-size:4;white-space:pre;overflow-wrap:normal;overflow-x:auto;caret-color:var(--neon-cyan)}
+.code-area::placeholder{color:var(--text-dim);opacity:0.4}
+.code-area:focus{background:rgba(0,0,0,0.15)}
+
+/* Terminal Console */
+.output-panel{height:150px;min-height:100px;background:rgba(6,10,16,0.8);border-top:1px solid var(--glass-border);display:flex;flex-direction:column;position:relative}
+.output-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(16,185,129,0.3),transparent)}
+.output-tabs{display:flex;background:rgba(17,24,39,0.4);border-bottom:1px solid var(--glass-border);padding:0 14px}
+.output-tab{padding:8px 18px;font-size:11px;background:none;border:none;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;font-family:var(--font-sans);transition:var(--transition);font-weight:500;display:flex;align-items:center;gap:6px}
+.output-tab.active{color:var(--neon-green);border-bottom-color:var(--neon-green)}
+.output-tab .tab-count{font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(255,255,255,0.06);color:var(--text-dim)}
+.output-cont{flex:1;padding:10px 18px;font-family:var(--font-mono);font-size:12px;overflow-y:auto;color:var(--text-secondary);line-height:1.8;background:rgba(0,0,0,0.2)}
+.output-line{padding:1px 0;animation:terminalIn 0.15s ease;opacity:0.9}
+@keyframes terminalIn{from{opacity:0;transform:translateX(-4px)}to{opacity:0.9;transform:translateX(0)}}
+.o-info{color:var(--neon-cyan)}.o-ok{color:var(--neon-green)}.o-err{color:#ef4444}
+.o-agent{color:var(--neon-purple)}.o-deep{color:var(--neon-orange)}
+.output-cont .prompt-line{color:var(--neon-green);user-select:none}
+
+/* ===== AI CHAT ===== */
+.ai-layout{display:flex;height:100%;overflow:hidden;gap:0}
+.ai-chat{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--glass-border);min-width:0}
+.ai-hdr{padding:18px 24px 14px;border-bottom:1px solid var(--glass-border);background:linear-gradient(180deg,rgba(139,92,246,0.03),transparent)}
+.ai-hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ai-hdr h2{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.ai-hdr p{font-size:12px;color:var(--text-dim)}
+.ai-badge{font-size:9px;background:linear-gradient(135deg,var(--neon-purple),var(--neon-cyan));color:#fff;padding:3px 12px;border-radius:20px;font-weight:700;letter-spacing:0.5px}
+.model-sel{padding:8px 14px;border-radius:var(--radius);background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);color:var(--text-primary);font-size:12px;font-family:var(--font-sans);cursor:pointer;width:100%;transition:var(--transition);margin-top:8px}
+.model-sel:focus{border-color:var(--neon-purple);outline:none;box-shadow:0 0 15px rgba(139,92,246,0.1)}
+.model-sel option{background:var(--bg-secondary);color:var(--text-primary)}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+.msg{display:flex;gap:12px;animation:msgIn 0.3s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg-av{width:36px;height:36px;min-width:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--glass);border:1px solid var(--glass-border)}
+.msg.user .msg-av{background:linear-gradient(135deg,var(--neon-purple),var(--neon-cyan));border-color:transparent;box-shadow:var(--purple-glow)}
+.msg-c{flex:1;min-width:0}
+.msg-hdr{font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.msg-hdr .agent-tag{font-size:9px;background:rgba(139,92,246,0.12);color:var(--neon-purple);padding:1px 8px;border-radius:10px;font-weight:600}
+.msg-txt{font-size:13px;line-height:1.7;color:var(--text-primary);white-space:pre-wrap}
+.msg-txt code{background:rgba(139,92,246,0.1);padding:1px 6px;border-radius:4px;font-family:var(--font-mono);font-size:12px;color:var(--neon-purple)}
+.msg-txt pre{background:rgba(0,0,0,0.3);padding:14px 16px;border-radius:var(--radius);margin:8px 0;overflow-x:auto;font-family:var(--font-mono);font-size:12px;color:var(--text-primary);border:1px solid var(--glass-border);line-height:1.6;position:relative}
+.msg-txt pre::before{content:'code';position:absolute;top:6px;right:10px;font-size:8px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px}
+.chat-inp-area{display:flex;gap:8px;padding:14px 18px 16px;border-top:1px solid var(--glass-border);background:rgba(17,24,39,0.3)}
+.chat-inp{flex:1;padding:12px 18px;border-radius:var(--radius);background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);color:var(--text-primary);font-family:var(--font-sans);font-size:13px;resize:none;outline:none;transition:var(--transition)}
+.chat-inp:focus{border-color:var(--neon-purple);box-shadow:0 0 20px rgba(139,92,246,0.08)}
+.send-btn{width:44px;height:44px;border-radius:50%;padding:0;min-width:44px;font-size:16px;display:flex;align-items:center;justify-content:center}
+
+/* AI Preview */
+.ai-preview{width:430px;min-width:350px;display:flex;flex-direction:column;background:rgba(6,10,16,0.4);position:relative}
+.ai-preview::before{content:'ai output';position:absolute;top:12px;right:16px;font-size:8px;color:var(--text-dim);font-weight:600;letter-spacing:1.5px;background:rgba(0,0,0,0.3);padding:3px 12px;border-radius:4px;text-transform:uppercase;z-index:1}
+.pre-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--glass-border)}
+.pre-hdr h3{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.pre-hdr h3 span{font-size:9px;color:var(--text-dim);font-weight:400}
+.pre-acts{display:flex;gap:4px}
+.pre-code{flex:1;padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.65;color:var(--text-primary);overflow:auto;white-space:pre-wrap;margin:0;counter-reset:line;background:rgba(0,0,0,0.2)}
+.typing{display:flex;gap:4px;padding:8px 0}
+.typing span{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--neon-purple);animation:typingBounce 1.4s infinite}
+.typing span:nth-child(2){animation-delay:0.2s;background:var(--neon-cyan)}
+.typing span:nth-child(3){animation-delay:0.4s;background:var(--neon-green)}
+@keyframes typingBounce{0%,60%,100%{opacity:0.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-6px)}}
+
+/* ===== TEMPLATES ===== */
+.page-hdr{padding:22px 28px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.page-hdr h2{font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--text-primary),var(--neon-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.page-hdr p{color:var(--text-secondary);font-size:13px}
+.tpl-grid{padding:0 28px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;overflow-y:auto;flex:1;align-content:start}
+.tpl-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:22px;cursor:pointer;transition:var(--transition);position:relative;overflow:hidden;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.tpl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--neon-purple),var(--neon-cyan),var(--neon-green));opacity:0;transition:var(--transition)}
+.tpl-card:hover::before{opacity:1}
+.tpl-card:hover{border-color:rgba(139,92,246,0.2);transform:translateY(-4px);box-shadow:var(--shadow-card)}
+.tpl-card h3{font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text-primary);display:flex;align-items:center;gap:8px}
+.tpl-card p{font-size:12px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5}
+.tpl-tags{display:flex;gap:4px;flex-wrap:wrap}
+.tpl-tag{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(139,92,246,0.08);color:var(--neon-purple);letter-spacing:0.3px}
+
+/* Library */
+.lib-grid{padding:0 28px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;overflow-y:auto;flex:1;align-content:start}
+.lib-item{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:18px;cursor:pointer;transition:var(--transition);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.lib-item:hover{border-color:rgba(6,182,212,0.2);transform:translateY(-2px);box-shadow:var(--shadow-card)}
+.lib-item h4{font-size:13px;font-weight:600;margin-bottom:3px;color:var(--text-primary)}
+.lib-item p{font-size:11px;color:var(--text-dim)}
+.lib-item .lib-date{font-size:10px;color:rgba(74,85,104,0.6);margin-top:6px}
+.empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text-dim);font-size:14px}
+
+/* Settings */
+.settings-card{margin:0 28px 24px;background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:26px;max-width:600px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.settings-card h3{font-size:15px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--glass-border);gap:12px}
+.set-row:last-of-type{border-bottom:none}
+.set-row label{font-size:13px;color:var(--text-secondary);min-width:110px;flex-shrink:0}
+.set-row input,.set-row select{padding:9px 14px;border-radius:var(--radius);background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);color:var(--text-primary);font-size:12px;flex:1;outline:none;transition:var(--transition)}
+.set-row input:focus,.set-row select:focus{border-color:var(--neon-purple);box-shadow:0 0 15px rgba(139,92,246,0.1)}
+.set-row select{font-family:var(--font-sans);cursor:pointer}
+.set-row select option{background:var(--bg-secondary);color:var(--text-primary)}
+.api-row{display:flex;gap:4px;flex:1}
+.api-row input{flex:1;font-family:var(--font-mono);font-size:11px}
+.range-row{display:flex;align-items:center;gap:12px;flex:1}
+.range-row input[type=range]{flex:1;accent-color:var(--neon-purple);height:4px;cursor:pointer}
+.range-row span{min-width:30px;text-align:center;font-size:13px;color:var(--text-primary);font-weight:600}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:rgba(17,24,39,0.9);border:1px solid rgba(16,185,129,0.2);padding:14px 24px;border-radius:var(--radius);box-shadow:0 12px 40px rgba(0,0,0,0.6);font-size:13px;font-weight:500;transform:translateY(140px);opacity:0;transition:all 0.5s cubic-bezier(0.16,1,0.3,1);z-index:9999;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);display:flex;align-items:center;gap:8px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.err{border-color:rgba(239,68,68,0.2)}
+.toast-icon{font-size:16px}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1100px){.panels-row{grid-template-columns:1fr}.ai-layout{flex-direction:column}.ai-preview{width:100%;min-width:unset;height:45%}.ai-preview::before{display:none}}
+@media(max-width:768px){
+  .sidebar{position:fixed;z-index:1000;transform:translateX(-120%);transition:all 0.4s cubic-bezier(0.16,1,0.3,1);width:280px;box-shadow:0 0 50px rgba(0,0,0,0.5)}
+  .sidebar.open{transform:translateX(0)}
+  .close-sidebar{display:block}
+  .menu-btn{display:block}
+  .actions .btn-primary span{display:none}
+  .topbar{padding:0 12px;gap:8px}
+  .actions .divider{display:none}
+  .actions .tbtn{display:none}
+  .actions .btn-primary{font-size:16px;padding:8px 14px}
+  .output-panel{height:90px}
+  .page-hdr{padding:14px 16px 10px}.page-hdr h2{font-size:18px}
+  .tpl-grid,.lib-grid{padding:0 14px 14px;grid-template-columns:1fr}
+  .settings-card{margin:0 14px 14px;padding:18px}
+  .set-row{flex-direction:column;align-items:flex-start;gap:6px}
+  .api-row{width:100%}
+  .dash-scroll{padding:16px}.stats-grid{grid-template-columns:1fr 1fr}
+  .agent-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr}.dash-top{flex-direction:column;gap:12px}
+  .file-name{font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis}
+  .file-status{display:none}
+  .code-area{font-size:12px;padding:12px 14px}
+  .line-num{font-size:12px;padding:12px 8px;min-width:40px}
+  .quick-grid{grid-template-columns:1fr 1fr}
+  .agent-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-wrap">
+        <div class="logo-icon"><i class="fas fa-brain"></i></div>
+        <div><div><span class="logo-text">LuauScript</span><span class="logo-badge">Neural</span></div></div>
+      </div>
+      <button class="close-sidebar" id="closeSidebar"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="agent-status">
+      <div class="status-ring">
+        <svg width="32" height="32"><circle class="bg" cx="16" cy="16" r="14"/><circle class="fg" cx="16" cy="16" r="14"/></svg>
+        <div class="dot"></div>
+      </div>
+      <div class="status-info">
+        <span class="status-label">Agent Network</span>
+        <span class="status-value"><strong>30</strong> / 30 Online</span>
+      </div>
+    </div>
+    <div class="agent-bar-wrap">
+      <div class="agent-bar" id="agentBar">
+        <div class="agent-bar-item active"><div class="fill" style="width:85%"></div></div>
+        <div class="agent-bar-item active"><div class="fill" style="width:72%"></div></div>
+        <div class="agent-bar-item active"><div class="fill" style="width:60%"></div></div>
+        <div class="agent-bar-item active"><div class="fill" style="width:45%"></div></div>
+        <div class="agent-bar-item active"><div class="fill" style="width:30%"></div></div>
+      </div>
+    </div>
+    <div class="nav-wrap">
+      <div class="nav-label">Interface</div>
+      <nav class="nav">
+        <a class="nav-item active" data-page="dashboard"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Dashboard</a>
+        <a class="nav-item" data-page="editor"><span class="nav-icon"><i class="fas fa-code"></i></span> Editor</a>
+        <a class="nav-item" data-page="ai"><span class="nav-icon"><i class="fas fa-robot"></i></span> AI Agents <span class="nav-badge">30</span></a>
+        <a class="nav-item" data-page="templates"><span class="nav-icon"><i class="fas fa-layer-group"></i></span> Templates</a>
+        <a class="nav-item" data-page="library"><span class="nav-icon"><i class="fas fa-folder-open"></i></span> Scripts <span class="nav-badge warn" id="libCount">0</span></a>
+        <a class="nav-item" data-page="settings"><span class="nav-icon"><i class="fas fa-sliders-h"></i></span> Settings</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <span class="ft-left"><span class="ft-dot"></span> DeepSeek Neural Core</span>
+      <span>v3.0</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn"><i class="fas fa-bars"></i></button>
+      <div class="file-info">
+        <div class="file-icon"><i class="fas fa-file-code"></i></div>
+        <div class="file-details">
+          <span class="file-name" id="fileName">untitled.luau</span>
+          <span class="file-status"><span class="st-dot"></span> <span id="fileStatus">Saved</span></span>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="tbtn" id="undoBtn" title="Undo"><i class="fas fa-undo"></i></button>
+        <button class="tbtn" id="redoBtn" title="Redo"><i class="fas fa-redo"></i></button>
+        <span class="divider"></span>
+        <button class="tbtn" id="formatBtn" title="Format"><i class="fas fa-wand-magic"></i></button>
+        <button class="tbtn" id="downloadBtn" title="Download"><i class="fas fa-download"></i></button>
+        <button class="tbtn" id="copyBtn" title="Copy"><i class="fas fa-copy"></i></button>
+        <span class="divider"></span>
+        <button class="btn btn-primary" id="runAIbtn"><i class="fas fa-wand-sparkles"></i> <span>Generate</span></button>
+      </div>
+    </header>
+
+    <div class="pages">
+      <!-- Dashboard -->
+      <div class="page" id="page-dashboard">
+        <div class="dash-scroll">
+          <div class="dash-top">
+            <div class="dash-title">
+              <h1>Neural Command Center</h1>
+              <p><span class="live-dot"></span> 30 Agent Cluster · Active · Real-time</p>
+            </div>
+            <div class="dash-actions">
+              <button class="btn btn-ghost btn-sm" id="dashClearConsole"><i class="fas fa-terminal"></i> Clear Console</button>
+              <button class="btn btn-primary btn-sm" id="dashNewScript"><i class="fas fa-plus"></i> New Script</button>
+            </div>
+          </div>
+
+          <div class="stats-grid" id="statsGrid">
+            <div class="stat-card purple">
+              <div class="stat-top"><div class="stat-icon"><i class="fas fa-robot"></i></div><span class="stat-trend up"><i class="fas fa-arrow-up"></i> 100%</span></div>
+              <div class="stat-label">AI Agents Online</div>
+              <div class="stat-value">30</div>
+              <div class="stat-sub">All agents operational</div>
+            </div>
+            <div class="stat-card cyan">
+              <div class="stat-top"><div class="stat-icon"><i class="fas fa-scroll"></i></div><span class="stat-trend up"><i class="fas fa-arrow-up"></i> +12</span></div>
+              <div class="stat-label">Scripts Generated</div>
+              <div class="stat-value" id="statScripts">0</div>
+              <div class="stat-sub">Total generated scripts</div>
+            </div>
+            <div class="stat-card green">
+              <div class="stat-top"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><span class="stat-trend up"><i class="fas fa-check"></i> Stable</span></div>
+              <div class="stat-label">API Status</div>
+              <div class="stat-value"><span id="apiStatus">Connected</span></div>
+              <div class="stat-sub">DeepSeek neural link active</div>
+            </div>
+            <div class="stat-card orange">
+              <div class="stat-top"><div class="stat-icon"><i class="fas fa-clock"></i></div><span class="stat-trend up"><i class="fas fa-arrow-up"></i> Active</span></div>
+              <div class="stat-label">Session</div>
+              <div class="stat-value" id="sessionTime">00:00</div>
+              <div class="stat-sub">Current session duration</div>
+              <div class="mini-chart"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+            </div>
+          </div>
+
+          <div class="panels-row">
+            <div class="activity-panel">
+              <h3><i class="fas fa-activity" style="color:var(--neon-purple)"></i> Agent Activity <span class="h3-badge">Live</span></h3>
+              <div class="activity-list" id="activityList">
+                <div class="activity-item"><div class="a-dot purple"></div><div class="a-info"><div class="a-name">Agent 1-3</div><div class="a-desc">Core language systems loaded</div></div><div class="a-time">now</div></div>
+                <div class="activity-item"><div class="a-dot cyan"></div><div class="a-info"><div class="a-name">Agent 4-6</div><div class="a-desc">Roblox services initialized</div></div><div class="a-time">now</div></div>
+                <div class="activity-item"><div class="a-dot green"></div><div class="a-info"><div class="a-name">Agent 19-21</div><div class="a-desc">OOP module systems ready</div></div><div class="a-time">now</div></div>
+                <div class="activity-item"><div class="a-dot orange"></div><div class="a-info"><div class="a-name">Agent 25-27</div><div class="a-desc">Security protocols engaged</div></div><div class="a-time">now</div></div>
+              </div>
+            </div>
+            <div class="quick-panel">
+              <h3><i class="fas fa-bolt" style="color:var(--neon-orange)"></i> Quick Actions</h3>
+              <div class="quick-grid">
+                <button class="quick-btn" data-page="ai"><div class="qb-icon"><i class="fas fa-robot"></i></div><span class="qb-label">AI Chat</span></button>
+                <button class="quick-btn" data-page="templates"><div class="qb-icon"><i class="fas fa-layer-group"></i></div><span class="qb-label">Templates</span></button>
+                <button class="quick-btn" id="quickModule"><div class="qb-icon"><i class="fas fa-cube"></i></div><span class="qb-label">New Module</span></button>
+                <button class="quick-btn" id="quickDataStore"><div class="qb-icon"><i class="fas fa-database"></i></div><span class="qb-label">DataStore</span></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="agent-grid-panel">
+            <h3><i class="fas fa-network-wired" style="color:var(--neon-cyan)"></i> Agent Cluster Map <span class="h3-badge">30 Specialists</span></h3>
+            <div class="agent-grid" id="agentGrid">
+              <div class="agent-chip"><div class="ac-dot on"></div><span class="ac-num">01-03</span><span class="ac-name">Core Language</span></div>
+              <div class="agent-chip"><div class="ac-dot on"></div><span class="ac-num">04-06</span><span class="ac-name">Roblox Services</span></div>
+              <div class="agent-chip"><div class="ac-dot on"></div><span class="ac-num">07-09</span><span class="ac-name">UI/GUI Systems</span></div>
+              <div class="agent-chip"><div class="ac-dot on"></div><span class="ac-num">10-12</span><span class="ac-name">Game Mechanics</span></div>
+              <div class="agent-chip"><div class="ac-dot on"></div><span class="ac-num">13-15</span><span class="ac-name">Networking</span></div>
+              <div class="agent-chip"><div class="ac-dot on"></div><span class="ac-num">16-18</span><span class="ac-name">Optimization</span></div>
+              <div class="agent-chip"><div class="ac-dot on"></div><span class="ac-num">19-21</span><span class="ac-name">OOP/Modules</span></div>
+              <div class="agent-chip"><div class="ac-dot on"></div><span class="ac-num">22-24</span><span class="ac-name">Animation</span></div>
+              <div class="agent-chip"><div class="ac-dot on"></div><span class="ac-num">25-27</span><span class="ac-name">Security</span></div>
+              <div class="agent-chip"><div class="ac-dot on"></div><span class="ac-num">28-30</span><span class="ac-name">Testing</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Editor -->
+      <div class="page" id="page-editor">
+        <div class="editor-wrap">
+          <div class="editor-panel">
+            <div class="editor-hbar">
+              <div class="hbar-left"><span class="lang-badge">LUAU</span><span><i class="fas fa-eye" style="font-size:10px;color:var(--text-dim)"></i> Line <span id="lineCount">1</span></span></div>
+              <div class="hbar-right"><i class="fas fa-circle" style="color:var(--neon-green);font-size:8px"></i> Ready</div>
+            </div>
+            <div class="editor-box">
+              <div class="line-num" id="lineNum">1</div>
+              <textarea class="code-area" id="codeEditor" spellcheck="false" placeholder="-- Your Luau script starts here...">-- LuauScript AI - 30 Neural Agents Ready
+-- Describe what you need to the AI team
+
+local function greet(name: string): string
+    return "Hello, " .. name .. "!"
+end
+
+local msg = greet("Developer")
+print(msg)
+
+-- Go to AI Agents Hub (sidebar)
+-- Tell the 30 agents what to build!</textarea>
+            </div>
+          </div>
+          <div class="output-panel">
+            <div class="output-tabs"><button class="output-tab active"><i class="fas fa-terminal"></i> Console <span class="tab-count">3</span></button></div>
+            <div class="output-cont" id="outputCont">
+              <div class="output-line"><span style="color:var(--neon-green)">$</span> <span class="o-info">[INIT]</span> 30 AI Agents online</div>
+              <div class="output-line"><span style="color:var(--neon-green)">$</span> <span class="o-agent">[AGENTS]</span> DeepSeek model active</div>
+              <div class="output-line"><span style="color:var(--neon-green)">$</span> <span class="o-deep">[DEEPSEEK]</span> Neural core ready</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Agents Hub -->
+      <div class="page" id="page-ai">
+        <div class="ai-layout">
+          <div class="ai-chat">
+            <div class="ai-hdr">
+              <div class="ai-hdr-top">
+                <h2><i class="fas fa-robot" style="color:var(--neon-purple)"></i> 30 AI Agents Team</h2>
+                <span class="ai-badge"><i class="fas fa-microchip"></i> DeepSeek</span>
+              </div>
+              <p>Chat normally or command the agents to generate scripts</p>
+              <select class="model-sel" id="modelSel">
+                <option value="deepseek/deepseek-chat" selected>DeepSeek Chat (30 Agents)</option>
+                <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                <option value="google/gemini-2.0-flash">Gemini 2.0 Flash</option>
+                <option value="openai/gpt-4o">GPT-4o</option>
+              </select>
+            </div>
+            <div class="chat-msgs" id="chatMsgs">
+              <div class="msg">
+                <div class="msg-av"><i class="fas fa-brain"></i></div>
+                <div class="msg-c">
+                  <div class="msg-hdr">System <span class="agent-tag">30 Agents Online</span></div>
+                  <div class="msg-txt">Welcome to the 30-Agent Neural Luau Factory!<br><br>
+                  <b>📝 Chat normally</b> - ask questions, get advice<br>
+                  <b>🎯 Command the agents</b> - "create a script that..." / "build a gun system"<br><br>
+                  Examples:<br>
+                  • "build a gun system with raycast"<br>
+                  • "create a module for saving player data"<br>
+                  • "make a GUI drag system"<br>
+                  • "what is the best way to optimize loops?"</div>
+                </div>
+              </div>
+            </div>
+            <div class="chat-inp-area">
+              <textarea class="chat-inp" id="chatInp" placeholder="Ask the 30 AI agents anything..." rows="2"></textarea>
+              <button class="btn btn-primary send-btn" id="sendBtn"><i class="fas fa-arrow-right"></i></button>
+            </div>
+          </div>
+          <div class="ai-preview">
+            <div class="pre-hdr">
+              <h3><i class="fas fa-scroll" style="color:var(--neon-cyan)"></i> Agent Output <span>(DeepSeek)</span></h3>
+              <div class="pre-acts">
+                <button class="btn btn-ghost btn-sm" id="insertBtn"><i class="fas fa-file-import"></i> Insert</button>
+                <button class="btn btn-ghost btn-sm" id="copyScriptBtn"><i class="fas fa-copy"></i> Copy</button>
+              </div>
+            </div>
+            <pre class="pre-code" id="preCode">-- 30 AI Agents are ready
+-- Describe your script and they will generate it
+-- Or ask any Luau question</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Templates -->
+      <div class="page" id="page-templates">
+        <div class="page-hdr"><h2><i class="fas fa-layer-group"></i> Templates</h2><p>9 professional Luau templates by AI agents</p></div>
+        <div class="tpl-grid" id="tplGrid"></div>
+      </div>
+
+      <!-- Library -->
+      <div class="page" id="page-library">
+        <div class="page-hdr"><h2><i class="fas fa-folder-open"></i> My Scripts</h2><p>Your generated scripts library</p><button class="btn btn-danger" id="clearLibBtn"><i class="fas fa-trash-alt"></i> Clear All</button></div>
+        <div class="lib-grid" id="libGrid"><div class="empty"><i class="fas fa-inbox" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.3"></i>No scripts yet. Tell the AI agents to create one!</div></div>
+      </div>
+
+      <!-- Settings -->
+      <div class="page" id="page-settings">
+        <div class="page-hdr"><h2><i class="fas fa-sliders-h"></i> Settings</h2><p>Agent configuration</p></div>
+        <div class="settings-card">
+          <h3><i class="fas fa-microchip" style="color:var(--neon-purple)"></i> AI Engine Configuration</h3>
+          <div class="set-row">
+            <label>API Key</label>
+            <div class="api-row">
+              <input type="password" id="apiKeyInp" value="sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+              <button class="btn btn-ghost btn-sm" id="toggleKey"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+          <div class="set-row">
+            <label>Default Model</label>
+            <select id="defModel">
+              <option value="deepseek/deepseek-chat">DeepSeek Chat (30 Agents)</option>
+              <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+              <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+              <option value="openai/gpt-4o">GPT-4o</option>
+            </select>
+          </div>
+          <div class="set-row">
+            <label>Max Tokens</label>
+            <input type="number" id="maxTok" value="4096" min="512" max="16384">
+          </div>
+          <div class="set-row">
+            <label>Temperature</label>
+            <div class="range-row">
+              <input type="range" id="tempSlider" min="0" max="2" step="0.1" value="0.8">
+              <span id="tempVal">0.8</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="saveSetBtn" style="margin-top:16px"><i class="fas fa-save"></i> Save Configuration</button>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+  </main>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are a coordinated team of exactly 30 expert Luau/Roblox developers working as one unified AI. Your name is "LuauScript AI - 30 Agent Team".
+
+IMPORTANT RULES:
+1. Generate a full script ONLY when the user EXPLICITLY and DIRECTLY commands you with clear phrases like "create a script that...", "write a script for...", "build a system that...", "make a GUI that...", "انشا سكربت", "اكتب سكربت", "سوي سكربت", "برمج سكربت", "إنشاء سكربت". If they just mention these words in casual conversation, do NOT generate a script — treat it as normal chat.
+2. When the user just asks a question or chats normally (advice, explanation, best practices, greetings), respond helpfully WITHOUT generating a full script.
+3. Your 30 agents specialize in:
+   - Agent 1-3: Core Luau language & syntax experts
+   - Agent 4-6: Roblox services (DataStore, Pathfinding, Tween, etc.)
+   - Agent 7-9: UI/GUI systems (ScrollingFrames, DragDrop, etc.)
+   - Agent 10-12: Game mechanics (Combat, Inventory, Skills)
+   - Agent 13-15: Networking (RemoteEvents, Bindables)
+   - Agent 16-18: Performance optimization & Memory management
+   - Agent 19-21: OOP & Module systems design
+   - Agent 22-24: Animation & Tween systems
+   - Agent 25-27: Security & Anti-exploit
+   - Agent 28-30: Testing & Debugging
+4. When generating a script:
+   - Always use "local" variables
+   - Add clear comments
+   - Include type annotations where useful
+   - Make it efficient and battle-tested
+   - Format with proper indentation
+   - Wrap in \\\`\\\`\\\`luau code blocks
+5. When chatting:
+   - Be concise but thorough
+   - Show code snippets for examples
+   - Reference which agents are answering
+
+Response format for scripts:
+\\\`\\\`\\\`luau
+-- Generated by Agents [X, Y, Z]
+-- Purpose: [description]
+-- Agents involved: [list]
+
+[full code]
+\\\`\\\`\\\`
+
+For questions, just answer naturally.`;
+
+const TEMPLATES = [
+  {name:'Module Script',desc:'Reusable module with functions and OOP pattern',tags:['module','oop','architecture'],code:'-- Module Script Template\nlocal module = {}\nmodule.__index = module\n\nfunction module.new(config)\n\tlocal self = setmetatable({name = config.name or "Module",enabled = true}, module)\n\tself:init()\n\treturn self\nend\nfunction module:init() print(self.name .. " initialized") end\nfunction module:start() if self.enabled then task.spawn(function() self:run() end) end end\nfunction module:run() end\nreturn module'},
+  {name:'Remote Events',desc:'Client-server communication system',tags:['remote','networking','events'],code:'-- Remote Events Manager\nlocal RS = game:GetService("ReplicatedStorage")\nlocal RemoteManager = {}\nfunction RemoteManager:createRemote(name, mode)\n\tlocal remote = mode == "Event" and Instance.new("RemoteEvent") or Instance.new("RemoteFunction")\n\tremote.Name = name; remote.Parent = RS\n\treturn remote\nend\nfunction RemoteManager:fireClient(remote, player, ...) remote:FireClient(player, ...) end\nfunction RemoteManager:fireAllClients(remote, ...) remote:FireAllClients(...) end\nfunction RemoteManager:fireServer(remote, ...) remote:FireServer(...) end\nreturn RemoteManager'},
+  {name:'Leaderboard',desc:'Player stats and leaderboard with DataStore',tags:['stats','leaderboard','datastore'],code:'-- Leaderboard System\nlocal DSS = game:GetService("DataStoreService")\nlocal dataStore = DSS:GetDataStore("LeaderboardData")\nlocal Leaderboard = {}\nfunction Leaderboard:create(player)\n\tlocal ls = Instance.new("Folder"); ls.Name = "leaderstats"; ls.Parent = player\n\tlocal p = Instance.new("NumberValue"); p.Name = "Points"; p.Value = 0; p.Parent = ls\n\tlocal r = Instance.new("StringValue"); r.Name = "Rank"; r.Value = "Bronze"; r.Parent = ls\n\treturn {points = p, rank = r}\nend\nreturn Leaderboard'},
+  {name:'Tween Animation',desc:'Smooth UI animation system',tags:['tween','ui','animation'],code:'-- Tween Animation System\nlocal TS = game:GetService("TweenService")\nlocal Animator = {}\nfunction Animator:tween(obj, props, duration, style, direction)\n\tlocal info = TweenInfo.new(duration or 0.5, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out)\n\treturn TS:Create(obj, info, props)\nend\nfunction Animator:fadeIn(gui, duration) gui.Visible = true; return self:tween(gui, {BackgroundTransparency = 0}, duration or 0.3) end\nreturn Animator'},
+  {name:'DataStore Module',desc:'Advanced player data persistence',tags:['datastore','save','persistence'],code:'-- DataStore Module\nlocal DSS = game:GetService("DataStoreService")\nlocal DataManager = {store = DSS:GetDataStore("PlayerProgress"), cache = {}}\nlocal DEFAULT = {points = 0, level = 1, xp = 0, inventory = {}}\nfunction DataManager:load(id)\n\tif self.cache[id] then return self.cache[id] end\n\tlocal s, d = pcall(function() return self.store:GetAsync(id) end)\n\tif s and d then self.cache[id] = d; return d end\n\tself.cache[id] = table.clone(DEFAULT); return self.cache[id]\nend\nfunction DataManager:save(id)\n\tlocal data = self.cache[id]\n\tif not data then return false end\n\tlocal s = pcall(function() self.store:SetAsync(id, data) end)\n\treturn s\nend\nreturn DataManager'},
+  {name:'Raycast Gun',desc:'Complete shooting system with raycast',tags:['gun','combat','raycast'],code:'-- Raycast Gun System\nlocal GunSystem = {}\nlocal RAY_PARAMS = RaycastParams.new()\nRAY_PARAMS.FilterType = Enum.RaycastFilterType.Blacklist\nfunction GunSystem:shoot(player, origin, direction, range, damage)\n\tlocal ignore = {player.Character}\n\tRAY_PARAMS.FilterDescendantsInstances = ignore\n\tlocal result = workspace:Raycast(origin, direction * (range or 500), RAY_PARAMS)\n\tif result and result.Instance then\n\t\tlocal h = result.Instance.Parent:FindFirstChildWhichIsA("Humanoid")\n\t\tif h then h:TakeDamage(damage or 25) end\n\t\treturn result\n\tend\nend\nreturn GunSystem'},
+  {name:'Class System OOP',desc:'Full object-oriented class builder',tags:['oop','class','architecture'],code:'-- Class System\nlocal Class = {}\nClass.__index = Class\nfunction Class:extend(name)\n\tlocal sub = {}; sub.__index = sub; sub.super = self; sub.className = name or "Class"\n\tsetmetatable(sub, self); return sub\nend\nfunction Class:new(...) local i = setmetatable({}, self); i:init(...); return i end\nfunction Class:init() end\nreturn Class'},
+  {name:'Pathfinding AI',desc:'Smart NPC pathfinding and movement',tags:['ai','npc','pathfinding'],code:'-- Pathfinding AI System\nlocal PFS = game:GetService("PathfindingService")\nlocal PathAI = {}\nfunction PathAI:moveTo(npc, targetPos)\n\tlocal humanoid = npc:FindFirstChildWhichIsA("Humanoid")\n\tlocal root = npc:FindFirstChild("HumanoidRootPart")\n\tif not humanoid or not root then return end\n\tlocal path = PFS:CreatePath({AgentRadius = 2, AgentHeight = 5, AgentCanJump = true})\n\tlocal s = pcall(function() path:ComputeAsync(root.Position, targetPos) end)\n\tif s and path.Status == Enum.PathStatus.Success then\n\t\tfor _, wp in ipairs(path:GetWaypoints()) do\n\t\t\thumanoid:MoveTo(wp.Position)\n\t\t\tif wp.Action == Enum.PathWaypointAction.Jump then humanoid.Jump = true end\n\t\t\thumanoid.MoveToFinished:Wait()\n\t\tend\n\tend\nend\nreturn PathAI'},
+  {name:'GUI Drag System',desc:'Professional draggable UI elements',tags:['gui','drag','ui/ux'],code:'-- GUI Drag System\nlocal UIS = game:GetService("UserInputService")\nlocal DragSystem = {}\nfunction DragSystem:makeDraggable(gui)\n\tlocal dragging = false; local ds, sp\n\tgui.InputBegan:Connect(function(i)\n\t\tif i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true; ds = i.Position; sp = gui.Position end\n\tend)\n\tgui.InputEnded:Connect(function(i)\n\t\tif i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end\n\tend)\n\tgame:GetService("RunService").RenderStepped:Connect(function()\n\t\tif dragging then\n\t\t\tlocal delta = UIS:GetMouseLocation() - ds\n\t\t\tgui.Position = UDim2.fromOffset(sp.X.Offset + delta.X, sp.Y.Offset + delta.Y)\n\t\tend\n\tend)\nend\nreturn DragSystem'}
+];
+
+const state = {
+  apiKey: 'sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  model: 'deepseek/deepseek-chat',
+  maxTokens: 4096,
+  temperature: 0.8,
+  conversation: [],
+  scripts: JSON.parse(localStorage.getItem('luauScripts') || '[]'),
+  currentPage: 'dashboard',
+  isGenerating: false,
+  sessionStart: Date.now(),
+  timerInterval: null
+};
+
+const $ = id => document.getElementById(id);
+const editor = $('codeEditor'), lineNum = $('lineNum'), lineCount = $('lineCount');
+const output = $('outputCont'), toast = $('toast');
+const chatMsgs = $('chatMsgs'), chatInp = $('chatInp'), preCode = $('preCode');
+const tplGrid = $('tplGrid'), libGrid = $('libGrid'), fileName = $('fileName');
+
+function showToast(msg, isErr) {
+  toast.innerHTML = '<span class="toast-icon">' + (isErr ? '<i class="fas fa-exclamation-triangle" style="color:#ef4444"></i>' : '<i class="fas fa-check-circle" style="color:var(--neon-green)"></i>') + '</span>' + msg;
+  toast.className = 'toast' + (isErr ? ' err' : '');
+  toast.classList.add('show');
+  clearTimeout(toast._hide);
+  toast._hide = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function log(msg, type) {
+  const cls = type === 'ok' ? 'o-ok' : type === 'err' ? 'o-err' : type === 'agent' ? 'o-agent' : type === 'deep' ? 'o-deep' : 'o-info';
+  output.innerHTML += '<div class="output-line"><span style="color:var(--neon-green)">$</span> <span class="' + cls + '">[' + type.toUpperCase() + ']</span> ' + msg + '</div>';
+  output.scrollTop = output.scrollHeight;
+}
+
+// Session timer
+function updateSession() {
+  const elapsed = Math.floor((Date.now() - state.sessionStart) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2,'0');
+  const s = String(elapsed % 60).padStart(2,'0');
+  const el2 = $('sessionTime');
+  if (el2) el2.textContent = m + ':' + s;
+}
+state.timerInterval = setInterval(updateSession, 1000);
+
+// ====== EDITOR ======
+function updateLines() {
+  const lines = editor.value.split('\n').length;
+  lineNum.textContent = Array.from({length: lines}, (_, i) => i + 1).join('\n');
+  lineCount.textContent = lines;
+}
+editor.addEventListener('input', updateLines);
+editor.addEventListener('keydown', function(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = this.selectionStart, end = this.selectionEnd;
+    this.value = this.value.substring(0, s) + '    ' + this.value.substring(end);
+    this.selectionStart = this.selectionEnd = s + 4; updateLines();
+  }
+});
+updateLines();
+
+// ====== NAVIGATION ======
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const page = this.dataset.page;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const el = document.getElementById('page-' + page);
+    if (el) el.classList.add('active');
+    state.currentPage = page;
+    $('sidebar').classList.remove('open');
+  });
+});
+$('menuBtn').addEventListener('click', () => $('sidebar').classList.toggle('open'));
+$('closeSidebar').addEventListener('click', () => $('sidebar').classList.remove('open'));
+
+// Quick actions navigate
+document.querySelectorAll('.quick-btn[data-page]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const page = this.dataset.page;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector('.nav-item[data-page="' + page + '"]').classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const el = document.getElementById('page-' + page);
+    if (el) el.classList.add('active');
+    state.currentPage = page;
+    $('sidebar').classList.remove('open');
+  });
+});
+
+// ====== TOPBAR ======
+$('runAIbtn').addEventListener('click', function() {
+  const code = editor.value;
+  if (code && code.length > 15) {
+    chatInp.value = 'Create a professional version of this script with improvements:\n\n```luau\n' + code + '\n```';
+  }
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector('.nav-item[data-page="ai"]').classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $('page-ai').classList.add('active');
+  state.currentPage = 'ai';
+  setTimeout(() => chatInp.focus(), 300);
+});
+
+$('downloadBtn').addEventListener('click', function() {
+  if (!editor.value) return;
+  const blob = new Blob([editor.value], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName.textContent;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('Downloaded: ' + fileName.textContent);
+});
+
+$('copyBtn').addEventListener('click', function() {
+  if (!editor.value) return;
+  navigator.clipboard.writeText(editor.value).then(() => showToast('Copied to clipboard'));
+});
+
+$('formatBtn').addEventListener('click', function() {
+  let code = editor.value;
+  code = code.replace(/\t/g, '    ').replace(/[ \t]+$/gm, '');
+  editor.value = code; updateLines();
+  showToast('Formatted');
+});
+
+// Dashboard buttons
+$('dashClearConsole')?.addEventListener('click', function() {
+  output.innerHTML = '';
+  log('Console cleared', 'info');
+});
+
+$('dashNewScript')?.addEventListener('click', function() {
+  editor.value = '-- New script\n';
+  fileName.textContent = 'untitled.luau';
+  updateLines();
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector('.nav-item[data-page="editor"]').classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $('page-editor').classList.add('active');
+  state.currentPage = 'editor';
+  showToast('New script created');
+});
+
+$('quickModule')?.addEventListener('click', function() { loadTemplate(0); });
+$('quickDataStore')?.addEventListener('click', function() { loadTemplate(4); });
+
+// ====== TEMPLATES ======
+function renderTemplates() {
+  tplGrid.innerHTML = '';
+  TEMPLATES.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'tpl-card';
+    const icons = ['fa-cube','fa-plug','fa-trophy','fa-wand-magic-sparkles','fa-database','fa-crosshairs','fa-cubes','fa-route','fa-arrows-alt'];
+    div.innerHTML = '<h3><i class="fas ' + (icons[i]||'fa-file') + '" style="color:var(--neon-purple)"></i> ' + t.name + '</h3><p>' + t.desc + '</p><div class="tpl-tags">' + t.tags.map(tg => '<span class="tpl-tag">#' + tg + '</span>').join('') + '</div>';
+    div.addEventListener('click', function() { loadTemplate(i); });
+    tplGrid.appendChild(div);
+  });
+}
+renderTemplates();
+
+function loadTemplate(idx) {
+  const t = TEMPLATES[idx]; if (!t) return;
+  editor.value = t.code; updateLines();
+  fileName.textContent = t.name.toLowerCase().replace(/\s+/g, '_') + '.luau';
+  saveScript(t.name, t.code);
+  log('Loaded template: ' + t.name, 'agent');
+  showToast('Loaded: ' + t.name);
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector('.nav-item[data-page="editor"]').classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $('page-editor').classList.add('active');
+}
+
+// ====== LIBRARY ======
+function renderLibrary() {
+  libGrid.innerHTML = '';
+  const libCount = $('libCount');
+  if (state.scripts.length === 0) {
+    libGrid.innerHTML = '<div class="empty"><i class="fas fa-inbox" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.3"></i>No scripts yet. Tell the 30 AI agents to create one!</div>';
+    if (libCount) libCount.textContent = '0';
+    if ($('statScripts')) $('statScripts').textContent = '0';
+    return;
+  }
+  if (libCount) libCount.textContent = state.scripts.length;
+  if ($('statScripts')) $('statScripts').textContent = state.scripts.length;
+  state.scripts.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'lib-item';
+    div.innerHTML = '<h4><i class="fas fa-file-code" style="color:var(--neon-cyan);margin-right:6px"></i>' + s.name + '</h4><p>' + s.code.substring(0, 80) + '...</p><div class="lib-date">' + (s.date || '') + '</div>';
+    div.addEventListener('click', function() {
+      editor.value = s.code; updateLines();
+      fileName.textContent = s.name + '.luau';
+      showToast('Loaded: ' + s.name);
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelector('.nav-item[data-page="editor"]').classList.add('active');
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      $('page-editor').classList.add('active');
+    });
+    libGrid.appendChild(div);
+  });
+}
+renderLibrary();
+
+function saveScript(name, code) {
+  state.scripts.unshift({name, code, date: new Date().toLocaleString()});
+  if (state.scripts.length > 50) state.scripts.pop();
+  localStorage.setItem('luauScripts', JSON.stringify(state.scripts));
+  renderLibrary();
+}
+
+$('clearLibBtn').addEventListener('click', function() {
+  if (state.scripts.length === 0) return;
+  if (!confirm('Clear all scripts?')) return;
+  state.scripts = []; localStorage.setItem('luauScripts', '[]');
+  renderLibrary(); showToast('Library cleared');
+});
+
+// ====== AI CHAT ======
+function addMessage(role, text, agentCount) {
+  const div = document.createElement('div');
+  div.className = 'msg';
+  const av = role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+  const name = role === 'user' ? 'You' : 'AI Agents';
+  const tag = role === 'user' ? '' : '<span class="agent-tag">' + (agentCount || '30 Agents') + '</span>';
+  div.innerHTML = '<div class="msg-av">' + av + '</div><div class="msg-c"><div class="msg-hdr">' + name + ' ' + tag + '</div><div class="msg-txt">' + formatMsg(text) + '</div></div>';
+  chatMsgs.appendChild(div);
+  chatMsgs.scrollTop = chatMsgs.scrollHeight;
+}
+
+function formatMsg(text) {
+  let s = text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  s = s.replace(/\n/g, '<br>');
+  return s;
+}
+
+function addTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg'; div.id = 'typingMsg';
+  div.innerHTML = '<div class="msg-av"><i class="fas fa-robot"></i></div><div class="msg-c"><div class="msg-hdr">30 Agents Working <span class="agent-tag">Processing</span></div><div class="typing"><span></span><span></span><span></span></div></div>';
+  chatMsgs.appendChild(div);
+  chatMsgs.scrollTop = chatMsgs.scrollHeight;
+}
+function removeTyping() { const el = $('typingMsg'); if (el) el.remove(); }
+
+function extractCode(text) {
+  const m = text.match(/```(?:luau|lua)?\n?([\s\S]*?)```/);
+  return m ? m[1].trim() : null;
+}
+
+function updatePreview(text) {
+  const code = extractCode(text);
+  if (code) { preCode.textContent = code; }
+  else { preCode.textContent = '-- (No code block in response)\n-- Check the chat for full answer'; }
+}
+
+function isScriptCommand(text) {
+  const cmdPhrases = [
+    'create a script','make a script','build a script','generate a script',
+    'create script','make script','build script','generate script',
+    'write a script','write script','code a script',
+    'create a function','make a function','create a module',
+    'create a gui','make a gui','create a system',
+    'create a tool','make a tool',
+    'انشا سكربت','إنشاء سكربت','اكتب سكربت','سوي سكربت',
+    'برمج سكربت','أنشئ سكربت','كون سكربت',
+    'build a gui','build a system','build a module'
+  ];
+  const lower = text.toLowerCase().trim();
+  if (cmdPhrases.some(p => lower.includes(p))) return true;
+  return false;
+}
+
+async function sendMessage() {
+  const msg = chatInp.value.trim();
+  if (!msg || state.isGenerating) return;
+  chatInp.value = '';
+  const isScript = isScriptCommand(msg);
+  state.isGenerating = true;
+  addMessage('user', msg);
+  state.conversation.push({role:'user', content: msg});
+  addTyping();
+  log('Agent ' + (isScript ? '1-30: Generating script...' : '1-30: Processing query...'), 'agent');
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + state.apiKey,
+        'HTTP-Referer': window.location.href,
+        'X-Title': 'LuauScript AI - 30 Agents'
+      },
+      body: JSON.stringify({
+        model: state.model,
+        messages: [{role:'system', content: SYSTEM_PROMPT}, ...state.conversation],
+        max_tokens: state.maxTokens,
+        temperature: state.temperature
+      })
+    });
+    if (!response.ok) {
+      const err = await response.text().catch(() => 'Unknown error');
+      removeTyping();
+      addMessage('system', '⚠️ API Error (' + response.status + '): ' + err);
+      log('API Error: ' + response.status + ' - ' + err, 'err');
+      state.isGenerating = false;
+      return;
+    }
+    const data = await response.json();
+    const reply = data.choices[0].message.content;
+    removeTyping();
+    addMessage('assistant', reply, isScript ? 'Script Generated' : 'Answered');
+    state.conversation.push({role:'assistant', content: reply});
+    updatePreview(reply);
+    const code = extractCode(reply);
+    if (code) {
+      log('Code generated (' + code.length + ' chars)', 'ok');
+      fileName.textContent = 'agent_script.luau';
+    } else {
+      log('Response received (no code block)', 'deep');
+    }
+    state.isGenerating = false;
+  } catch (e) {
+    removeTyping();
+    addMessage('system', '⚠️ Network Error: ' + e.message);
+    log('Network Error: ' + e.message, 'err');
+    state.isGenerating = false;
+  }
+}
+
+$('sendBtn').addEventListener('click', sendMessage);
+$('chatInp').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+$('insertBtn').addEventListener('click', function() {
+  const code = preCode.textContent;
+  if (!code || code.includes('No code block') || code.includes('30 AI Agents are ready')) return;
+  editor.value = code; updateLines();
+  showToast('Inserted into editor');
+});
+
+$('copyScriptBtn').addEventListener('click', function() {
+  const code = preCode.textContent;
+  if (!code || code.includes('No code block') || code.includes('30 AI Agents are ready')) return;
+  navigator.clipboard.writeText(code).then(() => showToast('Copied to clipboard'));
+});
+
+// ====== SETTINGS ======
+$('toggleKey').addEventListener('click', function() {
+  const inp = $('apiKeyInp');
+  if (inp.type === 'password') { inp.type = 'text'; this.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
+  else { inp.type = 'password'; this.innerHTML = '<i class="fas fa-eye"></i>'; }
+});
+
+$('tempSlider').addEventListener('input', function() {
+  $('tempVal').textContent = this.value;
+});
+
+$('saveSetBtn').addEventListener('click', function() {
+  state.apiKey = $('apiKeyInp').value;
+  state.model = $('defModel').value;
+  state.maxTokens = parseInt($('maxTok').value) || 4096;
+  state.temperature = parseFloat($('tempSlider').value) || 0.8;
+  localStorage.setItem('luauSettings', JSON.stringify({
+    apiKey: state.apiKey, model: state.model,
+    maxTokens: state.maxTokens, temperature: state.temperature
+  }));
+  $('modelSel').value = state.model;
+  log('Settings saved - Model: ' + state.model, 'deep');
+  showToast('Configuration saved');
+});
+
+// Load saved settings
+const saved = JSON.parse(localStorage.getItem('luauSettings') || '{}');
+if (saved.apiKey) state.apiKey = saved.apiKey;
+if (saved.model) state.model = saved.model;
+if (saved.maxTokens) state.maxTokens = saved.maxTokens;
+if (saved.temperature) state.temperature = saved.temperature;
+$('apiKeyInp').value = state.apiKey;
+$('defModel').value = state.model;
+$('maxTok').value = state.maxTokens;
+$('tempSlider').value = state.temperature;
+$('tempVal').textContent = state.temperature;
+$('modelSel').value = state.model;
+
+log('LuauScript AI Neural Core v3.0 initialized', 'info');
+log('30 DeepSeek Agents online', 'ok');
+</script>
+</body>
+</html>

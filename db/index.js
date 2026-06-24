@@ -1,0 +1,1 @@
+export { default as prisma, findMany, findById, create, update, remove, paginate } from './connection.js';
