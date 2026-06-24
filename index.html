@@ -1001,7 +1001,7 @@ async function sendMessage() {
   addTyping();
   log('Agent ' + (isScript ? '1-30: Generating script...' : '1-30: Processing query...'), 'agent');
   try {
-    log('Sending request to OpenRouter...', 'info');
+    log('Sending to OpenRouter | Model: ' + state.model + ' | Key: ' + state.apiKey.substring(0,12) + '...', 'info');
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -1091,7 +1091,7 @@ $('saveSetBtn').addEventListener('click', function() {
 
 // Load saved settings
 const saved = JSON.parse(localStorage.getItem('luauSettings') || '{}');
-if (saved.apiKey) state.apiKey = saved.apiKey;
+if (saved.apiKey && saved.apiKey.startsWith('sk-or-v1-')) state.apiKey = saved.apiKey;
 if (saved.model) state.model = saved.model;
 if (saved.maxTokens) state.maxTokens = saved.maxTokens;
 if (saved.temperature) state.temperature = saved.temperature;
@@ -1103,6 +1103,7 @@ $('tempVal').textContent = state.temperature;
 $('modelSel').value = state.model;
 
 log('LuauScript AI Neural Core v3.0 initialized', 'info');
+log('Model: ' + state.model + ' | API: ' + state.apiKey.substring(0,12) + '...', 'info');
 log('30 DeepSeek Agents online', 'ok');
 </script>
 </body>
