@@ -562,13 +562,13 @@ print(msg)
               </div>
               <p>Chat normally or command the agents to generate scripts</p>
               <select class="model-sel" id="modelSel">
-                <option value="deepseek/deepseek-chat" selected>DeepSeek Chat (30 Agents)</option>
-                <option value="deepseek/deepseek-chat:free">DeepSeek Chat (Free)</option>
+                <option value="openrouter/free" selected>Free Router (Auto)</option>
+                <option value="deepseek/deepseek-v4-flash">DeepSeek V4 Flash</option>
+                <option value="deepseek/deepseek-v4-pro">DeepSeek V4 Pro</option>
+                <option value="qwen/qwen3-coder:free">Qwen 3 Coder (Free)</option>
+                <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free)</option>
                 <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
                 <option value="openai/gpt-4o">GPT-4o</option>
-                <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-                <option value="google/gemini-2.0-flash">Gemini 2.0 Flash</option>
-                <option value="qwen/qwen-2.5-coder-32b">Qwen 2.5 Coder 32B</option>
               </select>
             </div>
             <div class="chat-msgs" id="chatMsgs">
@@ -634,12 +634,13 @@ print(msg)
           <div class="set-row">
             <label>Default Model</label>
             <select id="defModel">
-              <option value="deepseek/deepseek-chat">DeepSeek Chat (30 Agents)</option>
-              <option value="deepseek/deepseek-chat:free">DeepSeek Chat (Free)</option>
+              <option value="openrouter/free">Free Router (Auto)</option>
+              <option value="deepseek/deepseek-v4-flash">DeepSeek V4 Flash</option>
+              <option value="deepseek/deepseek-v4-pro">DeepSeek V4 Pro</option>
+              <option value="qwen/qwen3-coder:free">Qwen 3 Coder (Free)</option>
+              <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free)</option>
               <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
               <option value="openai/gpt-4o">GPT-4o</option>
-              <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-              <option value="google/gemini-2.0-flash">Gemini 2.0 Flash</option>
             </select>
           </div>
           <div class="set-row">
@@ -662,7 +663,7 @@ print(msg)
 </div>
 
 <script>
-const SYSTEM_PROMPT = `You are a coordinated team of exactly 30 expert Luau/Roblox developers, each running on DeepSeek Chat model, working as one unified AI. Your name is "LuauScript AI - 30 Agent Team".
+const SYSTEM_PROMPT = `You are a coordinated team of exactly 30 expert Luau/Roblox developers, each running on OpenRouter free model router, working as one unified AI. Your name is "LuauScript AI - 30 Agent Team".
 
 IMPORTANT RULES:
 1. Generate a full script ONLY when the user EXPLICITLY and DIRECTLY commands you with clear phrases like "create a script that...", "write a script for...", "build a system that...", "make a GUI that...", "انشا سكربت", "اكتب سكربت", "سوي سكربت", "برمج سكربت", "إنشاء سكربت". If they just mention these words in casual conversation, do NOT generate a script — treat it as normal chat.
@@ -715,7 +716,7 @@ const TEMPLATES = [
 
 const state = {
   apiKey: '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',
-  model: 'deepseek/deepseek-chat',
+  model: 'openrouter/free',
   maxTokens: 4096,
   temperature: 0.8,
   conversation: [],
